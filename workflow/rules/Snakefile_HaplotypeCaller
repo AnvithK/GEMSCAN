@@ -42,12 +42,12 @@ rule HC_call_variants:
         machine_type="n1-standard-8",
         runtime=2880,
         mem_mb=32000
-    threads: 4    
+    threads: 4
     benchmark:
         "run_times/HC_call_variants/{chrom}_{sample}.tsv" if by_chrom else "run_times/HC_call_variants/{sample}.tsv"
     conda:
         "../envs/gatk4.yaml"
-    singularity: 'docker://broadinstitute/gatk:4.2.6.1'     
+    singularity: 'docker://broadinstitute/gatk:4.6.0.0'
     shell:
         'gatk --java-options "-Xmx32G" HaplotypeCaller \
                                     -R {input.ref} \
@@ -83,7 +83,7 @@ rule HC_compress_gvcfs:
         ),
     benchmark:
         "run_times/HC_compress_gvcfs/{chrom}_{sample}.tsv" if by_chrom else "run_times/HC_compress_gvcfs/{sample}.tsv"
-    singularity: "docker://ghcr.io/shukwong/bcftools:20240501"     
+    singularity: "docker://ghcr.io/shukwong/bcftools:20240501"
     conda:
         "../envs/environment.yaml"
     shell:
@@ -104,7 +104,7 @@ rule HC_create_each_sample_manifest:
             "HaplotypeCaller/called/gvcfs/{sample}_manifest.txt"
         ),
     resources:
-        machine_type="n1-standard-2"     
+        machine_type="n1-standard-2"
     benchmark:
         "run_times/HC_create_each_sample_manifest/{chrom}/{sample}_manifest.tsv" if by_chrom else "run_times/HC_create_sample_manifest/{sample}_manifest.tsv"
     shell:
@@ -146,7 +146,7 @@ rule HC_GLmerge_gvcfs:
         ),
         b="split_regions/{chrom}.bed" if by_chrom else bedFile
     output:
-        temp("HaplotypeCaller/genotyped/HC_variants_{chrom}.bcf") if by_chrom else 
+        temp("HaplotypeCaller/genotyped/HC_variants_{chrom}.bcf") if by_chrom else
         temp("HaplotypeCaller/genotyped/HC_variants.bcf")
     params:
         workDir="HC_GLmerge_gvcfs/" + "{chrom}/" if by_chrom else "HC_GLmerge_gvcfs/all_chrs",
@@ -155,8 +155,8 @@ rule HC_GLmerge_gvcfs:
     resources:
         machine_type="n1-standard-8",
         runtime=2880,
-        mem_mb=glnexus_memGB*1000 
-    threads: 8     
+        mem_mb=glnexus_memGB*1000
+    threads: 8
     benchmark:
         "run_times/HC_GLmerge_gvcfs/{chrom}/HC_GLmerge_gvcfs.tsv" if by_chrom else "run_times/HC_GLmerge_gvcfs/HC_GLmerge_gvcfs.tsv"
     conda:
@@ -165,7 +165,7 @@ rule HC_GLmerge_gvcfs:
         "docker://ghcr.io/shukwong/bcftools:20240501"
     shell:
         "[ -d {params.workDir} ] && rm -rf {params.workDir}; mkdir -p {params.workDir};"
-        "if [ ! -f {params.workDir}/glnexus_cli ]; then wget https://github.com/dnanexus-rnd/GLnexus/releases/download/v1.2.7/glnexus_cli -P {params.workDir}; chmod +x {params.workDir}/glnexus_cli; fi;"
+        "if [ ! -f {params.workDir}/glnexus_cli ]; then wget https://github.com/dnanexus-rnd/GLnexus/releases/download/v1.2.7/glnexus_cli -P {params.workDir}; chmod +x {params.$
         "{params.workDir}/glnexus_cli --config {params.config} --dir {params.workDir}/GLnexus.DB  --bed {input.b} --list {input.m} -m {params.memGB} -t {threads} > {output};"
         "rm {params.workDir}/glnexus_cli;"
 
@@ -198,7 +198,7 @@ rule HC_indexBCF:
              else "HaplotypeCaller/genotyped/HC_variants.bcf.csi"),
     benchmark:
         "run_times/HC_indexBCF/HC_indexBCF.{chrom}.tsv" if by_chrom
-	     else "run_times/HC_indexBCF/HC_indexBCF.tsv"
+            else "run_times/HC_indexBCF/HC_indexBCF.tsv"
     conda:
         "../envs/environment.yaml"
     singularity:
