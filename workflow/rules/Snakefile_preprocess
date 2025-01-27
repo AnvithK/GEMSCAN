@@ -6,8 +6,8 @@ import subprocess
 from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 
 if clusterMode == "gcp":
-    GS = GSRemoteProvider()      
-        
+    GS = GSRemoteProvider()
+
 
 rule validate_bed_file:
     input:
@@ -22,7 +22,7 @@ rule validate_bed_file:
     log:
         "logs/validate_bed_file/validate_bed_file.log"
     shell:
-        "bedtools merge -i {input.bed} >/dev/null 2>logs/validate_bed_file/bedtools_merge.log;"        
+        "bedtools merge -i {input.bed} >/dev/null 2>logs/validate_bed_file/bedtools_merge.log;"
         "! grep ^Error logs/validate_bed_file/bedtools_merge.log && touch {output.validated}"
 
 
@@ -52,14 +52,14 @@ rule split_bed_file:
     '''
     input:
         bed = GS.remote(bedFile) if clusterMode == "gcp" else bedFile,
-	validated =  'split_regions/bedFile_validated'
+        validated =  'split_regions/bedFile_validated'
     output:
         bed =  'split_regions/{chrom}.bed'
     benchmark:
         'run_times/split_bed_file/{chrom}.tsv'
     conda:
-        "../envs/environment.yaml"  
+        "../envs/environment.yaml"
     log:
-        "logs/split_bed_file/split_bed_file.{chrom}.log"     
+        "logs/split_bed_file/split_bed_file.{chrom}.log"
     shell:
         'grep "^{wildcards.chrom}[[:space:]]" {input.bed} > {output.bed} || true'
