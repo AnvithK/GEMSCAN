@@ -111,8 +111,7 @@ num_of_samples = len(sampleList)
 # read in chromosome list from reference dict file (assumes the dict is already created)
 # this circumvents the issue of whether to use hg19-style or b37-style chromosome annotation
 # as it just pulls the chromosome names directly from the dict index.
-commonFile = "/data/Rajagopal-Lab/data/Anvith/TCGA/germline/GEMSCAN/workflow/common_contigs.txt"
-chromList = get_chrom_names(dictionaryFile, bedFile, commonFile)
+chromList = get_chrom_names(dictionaryFile, bedFile)
 
 #including preprocessing rules
 include: "rules/Snakefile_preprocess"
@@ -157,3 +156,5 @@ if hc_mode and dv_mode and strelka2_mode and har_mode:
         input:
             'ensemble/all_callers_merged_genotypes.vcf.gz',
             'ensemble/all_callers_merged_genotypes.vcf.gz.tbi'
+
+
