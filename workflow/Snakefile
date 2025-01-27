@@ -1,5 +1,5 @@
 '''
-Joint variant calling with GATK HaplotypeCaller, Google DeepVariant and Illumina Strelka2. 
+Joint variant calling with GATK HaplotypeCaller, Google DeepVariant and Illumina Strelka2.
 
 Notes:
     This pipeline is for use with the production germline pipeline.
@@ -28,13 +28,14 @@ from datetime import datetime
 # reference the config file
 configfile: "../config/config.yaml"
 report: 'report/workflow.rst'
-    
+
 # import variables from the config file
 hc_mode = config['runMode']['haplotypeCaller']
 dv_mode = config['runMode']['deepVariant']
 strelka2_mode = config['runMode']['streka2']
 har_mode = config['runMode']['harmonize']
 refGenome = config['refGenome']
+dictFile = config['dictFile']
 #snakePath = config['snakePath'].rstrip('/') + '/'
 bedFile = config['bedFile']
 by_chrom = config['by_chrom']
@@ -51,10 +52,9 @@ if clusterMode == "gcp" or useRemoteFiles:
 if clusterMode == "cluster":
    outputDir = "./"
 
-    
 #including the common functions
-include: "rules/common.smk"    
-
+#include: "rules/common.smk"
+include: "rules/common.smk"
 
 if dv_mode:
     #modelPath = config['modelPath']
@@ -71,7 +71,7 @@ if strelka2_mode:
 
 if hc_mode:
     glnexus_gatk_config = config['glnexus_gatk_config']
-    
+
 
 CALLERS = ['HC', 'DV', 'strelka2']  # used in harmonize module
 
@@ -79,7 +79,10 @@ CALLERS = ['HC', 'DV', 'strelka2']  # used in harmonize module
 refFile = os.path.basename(refGenome)
 refDir = os.path.dirname(refGenome)
 refNoExt = os.path.splitext(refFile)[0]
-dictionaryFile = refDir + '/' + refNoExt + '.dict'
+#dictionaryFile = refDir + '/' + refNoExt + '.dict'
+dictionaryFile = dictFile #'/data/Rajagopal-Lab/data/Anvith/TCGA/germline/GEMSCAN/hg38/hg38.dict'
+#dictionaryFile = '/data/Rajagopal-Lab/data/Anvith/TCGA/germline/GEMSCAN/hg19/hg19_canonical_correct_chr_order.dict'
+
 #dictionaryFile = config['dictionaryFile']
 
 # set a datetime stamp for GATK DBImport step
@@ -108,7 +111,8 @@ num_of_samples = len(sampleList)
 # read in chromosome list from reference dict file (assumes the dict is already created)
 # this circumvents the issue of whether to use hg19-style or b37-style chromosome annotation
 # as it just pulls the chromosome names directly from the dict index.
-chromList = get_chrom_names(dictionaryFile, bedFile)
+commonFile = "/data/Rajagopal-Lab/data/Anvith/TCGA/germline/GEMSCAN/workflow/common_contigs.txt"
+chromList = get_chrom_names(dictionaryFile, bedFile, commonFile)
 
 #including preprocessing rules
 include: "rules/Snakefile_preprocess"
@@ -130,10 +134,10 @@ if dv_mode and not hc_mode and not strelka2_mode:
     include: 'rules/Snakefile_DeepVariant'
     rule all:
         input:
-            expand('deepVariant/called/vcfs/{sample}_all_chroms.vcf.gz', sample=sampleList) if by_chrom else expand('deepVariant/called_by_sample/{sample}.vcf.gz', sample=sampleList),
+            expand('deepVariant/called/vcfs/{sample}_all_chroms.vcf.gz', sample=sampleList) if by_chrom else expand('deepVariant/called_by_sample/{sample}.vcf.gz', sample=sampl$
             'deepVariant/genotyped/DV_variants.vcf.gz'
-            
-            
+
+
 if hc_mode and dv_mode and strelka2_mode and not har_mode:
     include: 'rules/Snakefile_HaplotypeCaller'
     include: 'rules/Snakefile_DeepVariant'
@@ -141,9 +145,9 @@ if hc_mode and dv_mode and strelka2_mode and not har_mode:
     rule all:
         input:
             'HaplotypeCaller/genotyped/HC_variants.vcf.gz',
-            'deepVariant/genotyped/DV_variants.vcf.gz',   
+            'deepVariant/genotyped/DV_variants.vcf.gz',
             'strelka2/genotyped/strelka2_variants.vcf.gz'
-            
+
 if hc_mode and dv_mode and strelka2_mode and har_mode:
     include: 'rules/Snakefile_HaplotypeCaller'
     include: 'rules/Snakefile_DeepVariant'
@@ -153,4 +157,3 @@ if hc_mode and dv_mode and strelka2_mode and har_mode:
         input:
             'ensemble/all_callers_merged_genotypes.vcf.gz',
             'ensemble/all_callers_merged_genotypes.vcf.gz.tbi'
-
